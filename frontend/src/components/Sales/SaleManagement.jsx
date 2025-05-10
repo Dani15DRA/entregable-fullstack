@@ -103,30 +103,16 @@ const SaleManagement = () => {
       render: (_, record) => (
         <Space size="middle">
           <Button onClick={() => navigate(`/sales/${record.id}`)}>Ver</Button>
-          {record.status === 'Completada' && (
-            <Button danger onClick={() => handleCancelSale(record.id)}>
-              Cancelar
-            </Button>
-          )}
+          
         </Space>
       ),
     },
   ];
 
-  const handleCancelSale = async (id) => {
-    try {
-      await cancelSale(id);
-      message.success('Venta cancelada exitosamente');
-      fetchSales();
-    } catch (error) {
-      message.error('Error al cancelar la venta');
-    }
-  };
-
-  return (
+   return (
     <div className="min-h-screen bg-gray-50">
       <Navbar />
-      <div className="sale-management">
+      <div className="container mx-auto px-4 py-8">
         <Card title="Gestión de Ventas" bordered={false}>
           <Form layout="vertical" onFinish={handleSearch}>
             <Row gutter={16}>
@@ -143,26 +129,36 @@ const SaleManagement = () => {
                   </Select>
                 </Form.Item>
               </Col>
-              <Col span={8} style={{ display: 'flex', alignItems: 'flex-end', gap: 8 }}>
-                <Button type="primary" htmlType="submit" icon={<SearchOutlined />}>
-                  Buscar
-                </Button>
-                <Button onClick={handleReset}>
-                  Limpiar
-                </Button>
+              <Col span={8}>
+                <Form.Item label=" " colon={false}>
+                  <Space>
+                    <Button 
+                      type="primary" 
+                      htmlType="submit" 
+                      icon={<SearchOutlined />}
+                      style={{ width: 110 }}
+                    >
+                      Buscar
+                    </Button>
+                    <Button 
+                      onClick={handleReset}
+                      style={{ width: 110 }}
+                    >
+                      Limpiar
+                    </Button>
+                    <Button
+                      type="primary"
+                      icon={<PlusOutlined />}
+                      onClick={() => navigate('/sales/new')}
+                      style={{ width: 140 }}
+                    >
+                      Nueva Venta
+                    </Button>
+                  </Space>
+                </Form.Item>
               </Col>
             </Row>
           </Form>
-
-          <div style={{ marginTop: 16, textAlign: 'right' }}>
-            <Button
-              type="primary"
-              icon={<PlusOutlined />}
-              onClick={() => navigate('/sales/new')}
-            >
-              Nueva Venta
-            </Button>
-          </div>
 
           <Table
             columns={columns}

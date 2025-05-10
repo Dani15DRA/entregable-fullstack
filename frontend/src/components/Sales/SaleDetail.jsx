@@ -7,7 +7,10 @@ import {
   Button, 
   message,
   Tag,
-  Space
+  Space,
+  Row,
+  Col,
+  Typography
 } from 'antd';
 import { 
   getSaleById, 
@@ -15,6 +18,8 @@ import {
 } from '../../services/api';
 import { formatDate, formatCurrency } from '../../utils/helpers';
 import Navbar from '../Navbar';
+
+const { Text, Title } = Typography;
 
 const SaleDetail = () => {
   const { id } = useParams();
@@ -33,7 +38,6 @@ const SaleDetail = () => {
       const data = await getSaleById(id);
       setSale(data);
     } catch (error) {
-      console.error('Error fetching sale:', error);
       message.error('Error al cargar la venta');
     } finally {
       setLoading(false);
@@ -47,7 +51,6 @@ const SaleDetail = () => {
       message.success('Venta cancelada exitosamente');
       fetchSale();
     } catch (error) {
-      console.error('Error cancelling sale:', error);
       message.error(error.response?.data?.message || 'Error al cancelar la venta');
     } finally {
       setCancelling(false);
@@ -57,92 +60,133 @@ const SaleDetail = () => {
   if (!sale) return <div>Cargando...</div>;
 
   return (
-                <div className="min-h-screen bg-gray-50">
+    <div className="min-h-screen bg-gray-100">
       <Navbar />
-    <div className="sale-detail">
-      <Space direction="vertical" size="large" style={{ width: '100%' }}>
-        <Card 
-          title={`Venta #${sale.id}`} 
-          extra={
-            <Button onClick={() => navigate('/sales')}>
-              Volver
-            </Button>
-          }
-          loading={loading}
-        >
-          <Descriptions bordered column={2}>
-            <Descriptions.Item label="Fecha">{formatDate(sale.sale_date)}</Descriptions.Item>
-            <Descriptions.Item label="Estado">
-              <Tag color={sale.status === 'Completada' ? 'green' : 'red'}>
-                {sale.status}
-              </Tag>
-            </Descriptions.Item>
-            <Descriptions.Item label="Cliente">
-              {sale.client_first_name} {sale.client_last_name}
-            </Descriptions.Item>
-            <Descriptions.Item label="Atendido por">{sale.user_username}</Descriptions.Item>
-            <Descriptions.Item label="Método de Pago">{sale.payment_method}</Descriptions.Item>
-            <Descriptions.Item label="Notas">{sale.notes || 'N/A'}</Descriptions.Item>
-          </Descriptions>
-        </Card>
+      <div className="container mx-auto p-4">
+        <Space direction="vertical" size="middle" style={{ width: '100%' }}>
+          <Card 
+            title={<Title level={4} className="mb-0">Detalle de Venta #{sale.id}</Title>}
+            extra={
+              <Button onClick={() => navigate('/sales')}>
+                Volver
+              </Button>
+            }
+            loading={loading}
+            className="shadow-sm"
+          >
+            <Row gutter={[16, 16]}>
+              <Col xs={24} md={12}>
+                <Descriptions bordered size="small" column={1}>
+                  <Descriptions.Item label="Fecha">
+                    <Text strong>{formatDate(sale.sale_date, 'DD/MM/YYYY HH:mm')}</Text>
+                  </Descriptions.Item>
+                  <Descriptions.Item label="Estado">
+                    <Tag color={sale.status === 'Completada' ? 'green' : 'red'}>
+                      {sale.status}
+                    </Tag>
+                  </Descriptions.Item>
+                  <Descriptions.Item label="Atendido por">
+                    {sale.user_username}
+                  </Descriptions.Item>
+                </Descriptions>
+              </Col>
+              <Col xs={24} md={12}>
+                <Descriptions bordered size="small" column={1}>
+                  <Descriptions.Item label="Cliente">
+                    {sale.client_first_name || 'Sin cliente'}
+                  </Descriptions.Item>
+                  <Descriptions.Item label="Documento">
+                    {sale.client_identification_type}: {sale.client_identification_number}
+                  </Descriptions.Item>
+                  <Descriptions.Item label="Método de Pago">
+                    {sale.payment_method}
+                  </Descriptions.Item>
+                </Descriptions>
+              </Col>
+            </Row>
 
-        <Card title="Productos">
-          <Table
-            columns={[
-              { title: 'Producto', dataIndex: 'product_name', key: 'product_name' },
-              { 
-                title: 'Precio Unitario', 
-                dataIndex: 'unit_price', 
-                key: 'unit_price',
-                render: price => formatCurrency(price)
-              },
-              { title: 'Cantidad', dataIndex: 'quantity', key: 'quantity' },
-              { 
-                title: 'Total', 
-                dataIndex: 'total_price', 
-                key: 'total_price',
-                render: price => formatCurrency(price)
-              },
-            ]}
-            dataSource={sale.details}
-            rowKey="product_id"
-            pagination={false}
-          />
-        </Card>
+            {sale.notes && (
+              <Card size="small" title="Notas" className="mt-4">
+                <Text>{sale.notes}</Text>
+              </Card>
+            )}
+          </Card>
 
-        <Card>
-          <div className="sale-totals">
-            <div className="total-row">
-              <span>Subtotal:</span>
-              <span>{formatCurrency(sale.subtotal)}</span>
-            </div>
-            <div className="total-row">
-              <span>IVA (16%):</span>
-              <span>{formatCurrency(sale.tax)}</span>
-            </div>
-            <div className="total-row grand-total">
-              <span>Total:</span>
-              <span>{formatCurrency(sale.total)}</span>
-            </div>
-          </div>
-        </Card>
+          <Card title="Productos" className="shadow-sm">
+            <Table
+              columns={[
+                { 
+                  title: 'Producto', 
+                  dataIndex: 'product_name', 
+                  key: 'product_name',
+                  width: '40%'
+                },
+                { 
+                  title: 'Precio', 
+                  dataIndex: 'unit_price', 
+                  key: 'unit_price',
+                  render: price => formatCurrency(price),
+                  align: 'right',
+                  width: '20%'
+                },
+                { 
+                  title: 'Cantidad', 
+                  dataIndex: 'quantity', 
+                  key: 'quantity',
+                  align: 'center',
+                  width: '15%'
+                },
+                { 
+                  title: 'Total', 
+                  dataIndex: 'total_price', 
+                  key: 'total_price',
+                  render: price => formatCurrency(price),
+                  align: 'right',
+                  width: '25%'
+                }
+              ]}
+              dataSource={sale.details}
+              rowKey="product_id"
+              pagination={false}
+              size="small"
+            />
+          </Card>
 
-        {sale.status === 'Completada' && (
-          <div style={{ textAlign: 'right' }}>
-            <Button 
-              type="primary" 
-              danger 
-              onClick={handleCancelSale}
-              loading={cancelling}
-            >
-              Cancelar Venta
-            </Button>
-          </div>
-        )}
-      </Space>
+          <Card className="shadow-sm">
+            <Row justify="end">
+              <Col xs={24} sm={12} md={8}>
+                <Descriptions column={1} size="small">
+                  <Descriptions.Item label="Subtotal">
+                    <Text strong>{formatCurrency(sale.subtotal)}</Text>
+                  </Descriptions.Item>
+                  <Descriptions.Item label="IVA (16%)">
+                    <Text strong>{formatCurrency(sale.tax)}</Text>
+                  </Descriptions.Item>
+                  <Descriptions.Item label="Total">
+                    <Text strong type="success">{formatCurrency(sale.total)}</Text>
+                  </Descriptions.Item>
+                </Descriptions>
+              </Col>
+            </Row>
+
+            {sale.status === 'Completada' && (
+              <Row justify="end" className="mt-4">
+                <Col>
+                  <Button 
+                    type="primary" 
+                    danger 
+                    onClick={handleCancelSale}
+                    loading={cancelling}
+                  >
+                    Cancelar Venta
+                  </Button>
+                </Col>
+              </Row>
+            )}
+          </Card>
+        </Space>
+      </div>
     </div>
-        </div>
-
   );
 };
 

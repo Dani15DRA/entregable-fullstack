@@ -219,6 +219,8 @@ const getSales = async (req, res) => {
       SELECT s.*, 
              c.first_name as client_first_name, 
              c.last_name as client_last_name,
+                       c.identification_type as client_identification_type,
+          c.identification_number as client_identification_number,
              u.username as user_username
       FROM sales s
       LEFT JOIN clients c ON s.client_id = c.id
@@ -278,6 +280,8 @@ const getSaleById = async (req, res) => {
       `SELECT s.*, 
               c.first_name as client_first_name, 
               c.last_name as client_last_name,
+                                     c.identification_type as client_identification_type,
+          c.identification_number as client_identification_number,
               u.username as user_username
        FROM sales s
        LEFT JOIN clients c ON s.client_id = c.id
@@ -385,9 +389,35 @@ const cancelSale = async (req, res) => {
   }
 };
 
+// Agrega esta función en tu salesController.js
+const searchProducts = async (req, res) => {
+  try {
+    const { search } = req.query;
+    
+    let query = `
+      SELECT p.id, p.name, p.price, p.description, p.code,
+             c.name as category_name,
+             i.quantity as stock
+      FROM products p
+      LEFT JOIN categories c ON p.category_id = c.id
+      LEFT JOIN inventory i ON p.id = i.product_id
+      WHERE p.name LIKE ? OR c.name LIKE ? OR p.code LIKE ?
+      GROUP BY p.id
+    `;
+    
+    const searchTerm = `%${search}%`;
+    const [products] = await db.execute(query, [searchTerm, searchTerm, searchTerm]);
+    
+    res.json(products);
+  } catch (error) {
+    console.error('Error al buscar productos:', error);
+    res.status(500).json({ error: 'Error al buscar productos' });
+  }
+};
 module.exports = {
   createSale,
   getSales,
   getSaleById,
-  cancelSale
+  cancelSale,
+  searchProducts 
 };

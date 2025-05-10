@@ -172,6 +172,7 @@ const getActiveProductsForSelect = async (req, res) => {
   }
 };
 
+
 module.exports = {
   getProducts,
   getProductById,

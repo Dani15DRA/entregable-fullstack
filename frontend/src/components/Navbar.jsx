@@ -1,4 +1,3 @@
-// Navbar.jsx
 import React, { useState } from 'react';
 import { Link, useNavigate, useLocation } from 'react-router-dom';
 
@@ -45,17 +44,6 @@ const Navbar = () => {
               {role === 'admin' && (
                 <>
                   <Link
-                    to="/products"
-                    className={`inline-flex items-center px-1 pt-1 border-b-2 text-sm font-medium ${
-                      isActive('/products')
-                        ? 'border-indigo-500 text-gray-900'
-                        : 'border-transparent text-gray-500 hover:border-gray-300 hover:text-gray-700'
-                    }`}
-                  >
-                    Productos
-                  </Link>
-                  
-                  <Link
                     to="/inventory"
                     className={`inline-flex items-center px-1 pt-1 border-b-2 text-sm font-medium ${
                       isActive('/inventory')
@@ -77,13 +65,13 @@ const Navbar = () => {
                     Ventas
                   </Link>
 
-
-                  {/* Menú de Mantenimiento - Versión corregida */}
+                  {/* Menú de Mantenimiento */}
                   <div className="relative h-full flex items-center">
                     <div>
                       <button
                         onClick={() => setIsMaintenanceOpen(!isMaintenanceOpen)}
                         className={`inline-flex items-center px-1 pt-1 border-b-2 text-sm font-medium ${
+                          isActive('/products') || 
                           isActive('/ingredients') || 
                           isActive('/users') || 
                           isActive('/clients') || 
@@ -111,6 +99,16 @@ const Navbar = () => {
 
                       {isMaintenanceOpen && (
                         <div className="absolute left-0 mt-0 w-48 bg-white rounded-md shadow-lg py-1 border border-gray-200 z-10">
+                          <Link
+                            to="/products"
+                            className={`block px-4 py-2 text-sm ${
+                              isActive('/products')
+                                ? 'bg-indigo-100 text-indigo-700'
+                                : 'text-gray-700 hover:bg-gray-100'
+                            }`}
+                          >
+                            Productos
+                          </Link>
                           <Link
                             to="/ingredients"
                             className={`block px-4 py-2 text-sm ${
@@ -165,7 +163,7 @@ const Navbar = () => {
                 <span className="text-gray-500 text-sm">{email}</span>
                 <button
                   onClick={handleLogout}
-                  className="inline-flex items-center px-3 py-1.5 border border-transparent text-xs font-medium rounded-md shadow-sm text-white bg-indigo-600 hover:bg-indigo-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-indigo-500"
+                  className="inline-flex items-center px-3 py-1.5 border border-transparent text-xs font-medium rounded-md shadow-sm text-white bg-red-600 hover:bg-red-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-red-500"
                 >
                   Cerrar sesión
                 </button>
