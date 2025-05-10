@@ -8,7 +8,9 @@ const ClientModal = ({ isOpen, onClose, onSubmit, client }) => {
     email: '',
     phone: '',
     address: '',
-    rfc: ''
+    rfc: '',
+    identification_type: 'DNI',
+    identification_number: ''
   });
 
   useEffect(() => {
@@ -19,7 +21,9 @@ const ClientModal = ({ isOpen, onClose, onSubmit, client }) => {
         email: client.email || '',
         phone: client.phone || '',
         address: client.address || '',
-        rfc: client.rfc || ''
+        rfc: client.rfc || '',
+        identification_type: client.identification_type || 'DNI',
+        identification_number: client.identification_number || ''
       });
     } else {
       setFormData({
@@ -28,10 +32,12 @@ const ClientModal = ({ isOpen, onClose, onSubmit, client }) => {
         email: '',
         phone: '',
         address: '',
-        rfc: ''
+        rfc: '',
+        identification_type: 'DNI',
+        identification_number: ''
       });
     }
-  }, [client]);
+  }, [client, isOpen]); // Agregar isOpen como dependencia
 
   const handleChange = (e) => {
     const { name, value } = e.target;
@@ -44,20 +50,30 @@ const ClientModal = ({ isOpen, onClose, onSubmit, client }) => {
   const handleSubmit = (e) => {
     e.preventDefault();
     
-    // Validación básica
-    if (!formData.first_name || !formData.last_name) {
-      Swal.fire('Error', 'Nombre y apellido son obligatorios', 'error');
+    // Validación mejorada
+    if (!formData.first_name || !formData.last_name || !formData.identification_number) {
+      Swal.fire('Error', 'Nombre, apellido y número de identificación son obligatorios', 'error');
       return;
     }
 
-    onSubmit(formData);
+    // Asegurar que todos los campos tengan valor o null
+    const dataToSubmit = {
+      ...formData,
+      email: formData.email || null,
+      phone: formData.phone || null,
+      address: formData.address || null,
+      rfc: formData.rfc || null
+    };
+
+    onSubmit(dataToSubmit);
   };
 
   if (!isOpen) return null;
 
+
   return (
-    <div className="fixed inset-0 bg-transparent bg-opacity-20 flex items-center justify-center z-50 backdrop-blur-[1px]">
-      <div className="bg-white rounded-lg shadow-xl max-w-md w-full">
+      <div className="fixed inset-0 bg-transparent bg-opacity-20 flex items-center justify-center z-50 backdrop-blur-[1px]">
+      <div className="bg-white rounded-lg shadow-xl max-w-lg w-full">
         <div className="p-6">
           <div className="flex justify-between items-center mb-4">
             <h2 className="text-xl font-bold text-gray-800">
@@ -71,6 +87,35 @@ const ClientModal = ({ isOpen, onClose, onSubmit, client }) => {
           </div>
 
           <form onSubmit={handleSubmit}>
+            <div className="grid grid-cols-2 gap-4 mb-4">
+              <div>
+                <label className="block text-sm font-medium text-gray-700">Tipo de Identificación*</label>
+                <select
+                  name="identification_type"
+                  value={formData.identification_type}
+                  onChange={handleChange}
+                  required
+                  className="mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-blue-500 focus:ring-blue-500 sm:text-sm"
+                >
+                  <option value="DNI">DNI</option>
+                  <option value="RUC">RUC</option>
+                  <option value="Pasaporte">Pasaporte</option>
+                  <option value="Carnet Extranjería">Carnet Extranjería</option>
+                  <option value="Otro">Otro</option>
+                </select>
+              </div>
+              <div>
+                <label className="block text-sm font-medium text-gray-700">Número de Identificación*</label>
+                <input
+                  type="text"
+                  name="identification_number"
+                  value={formData.identification_number}
+                  onChange={handleChange}
+                  required
+                  className="mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-blue-500 focus:ring-blue-500 sm:text-sm"
+                />
+              </div>
+            </div>
             <div className="grid grid-cols-2 gap-4 mb-4">
               <div>
                 <label className="block text-sm font-medium text-gray-700">Nombre*</label>

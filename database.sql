@@ -171,3 +171,22 @@ CREATE TABLE purchase_details (
   FOREIGN KEY (purchase_id) REFERENCES purchases(id) ON DELETE CASCADE,
   FOREIGN KEY (product_id) REFERENCES products(id)
 );
+
+
+USE entregable_fullstack;
+
+-- Agregar columna para tipo de identificación
+ALTER TABLE clients 
+ADD COLUMNs identification_type ENUM('DNI', 'RUC', 'Pasaporte', 'Carnet Extranjería', 'Otro') NOT NULL DEFAULT 'DNI' AFTER rfc;
+
+-- Agregar columna para número de identificación (primero permitiendo nulos)
+ALTER TABLE clients 
+ADD COLUMN identification_number VARCHAR(20) NULL AFTER identification_type;
+
+-- Cambiar a NOT NULL ahora que todos los registros tienen valor
+ALTER TABLE clients 
+MODIFY COLUMN identification_number VARCHAR(20) NOT NULL;
+
+-- Agregar índice único
+ALTER TABLE clients 
+ADD UNIQUE INDEX identification_number_unique (identification_number);

@@ -6,8 +6,9 @@ const getClients = async (req, res) => {
     const params = [];
     
     if (req.query.search) {
-      query += ' WHERE first_name LIKE ? OR last_name LIKE ? OR email LIKE ?';
-      params.push(`%${req.query.search}%`, `%${req.query.search}%`, `%${req.query.search}%`);
+      query += ' WHERE first_name LIKE ? OR last_name LIKE ? OR email LIKE ? OR identification_number LIKE ?';
+      const searchTerm = `%${req.query.search}%`;
+      params.push(searchTerm, searchTerm, searchTerm, searchTerm);
     }
     
     const [clients] = await db.execute(query, params);
@@ -16,7 +17,6 @@ const getClients = async (req, res) => {
     res.status(500).json({ message: 'Error al obtener clientes' });
   }
 };
-
 const getClientById = async (req, res) => {
   try {
     const [client] = await db.execute(
@@ -33,16 +33,24 @@ const getClientById = async (req, res) => {
     res.status(500).json({ message: 'Error al obtener el cliente' });
   }
 };
-
 const createClient = async (req, res) => {
-  const { first_name, last_name, email, phone, address, rfc } = req.body;
+  const { first_name, last_name, email, phone, address, rfc, identification_type, identification_number } = req.body;
   
   try {
     const [result] = await db.execute(
       `INSERT INTO clients 
-       (first_name, last_name, email, phone, address, rfc)
-       VALUES (?, ?, ?, ?, ?, ?)`,
-      [first_name, last_name, email || null, phone || null, address || null, rfc || null]
+       (first_name, last_name, email, phone, address, rfc, identification_type, identification_number)
+       VALUES (?, ?, ?, ?, ?, ?, ?, ?)`,
+      [
+        first_name, 
+        last_name, 
+        email || null, 
+        phone || null, 
+        address || null, 
+        rfc || null,
+        identification_type || 'DNI', // Valor por defecto si es undefined
+        identification_number
+      ]
     );
     
     res.status(201).json({ 
@@ -51,22 +59,38 @@ const createClient = async (req, res) => {
     });
   } catch (err) {
     if (err.code === 'ER_DUP_ENTRY') {
-      return res.status(400).json({ message: 'El email ya está registrado' });
+      if (err.message.includes('email')) {
+        return res.status(400).json({ message: 'El email ya está registrado' });
+      } else if (err.message.includes('identification_number')) {
+        return res.status(400).json({ message: 'El número de identificación ya está registrado' });
+      }
     }
     res.status(500).json({ message: 'Error al crear cliente', error: err.message });
   }
 };
-
+// En el método updateClient
 const updateClient = async (req, res) => {
   const { id } = req.params;
-  const { first_name, last_name, email, phone, address, rfc } = req.body;
+  const { first_name, last_name, email, phone, address, rfc, identification_type, identification_number } = req.body;
   
   try {
+    // Verificar que el nuevo número de identificación no esté en uso
+    const [existing] = await db.execute(
+      'SELECT id FROM clients WHERE identification_number = ? AND id != ?',
+      [identification_number, id]
+    );
+    
+    if (existing.length > 0) {
+      return res.status(400).json({ message: 'El número de identificación ya está registrado' });
+    }
+
     const [result] = await db.execute(
       `UPDATE clients SET 
-       first_name = ?, last_name = ?, email = ?, phone = ?, address = ?, rfc = ?
+       first_name = ?, last_name = ?, email = ?, phone = ?, address = ?, rfc = ?,
+       identification_type = ?, identification_number = ?
        WHERE id = ?`,
-      [first_name, last_name, email || null, phone || null, address || null, rfc || null, id]
+      [first_name, last_name, email || null, phone || null, address || null, rfc || null,
+       identification_type, identification_number, id]
     );
     
     if (result.affectedRows === 0) {
