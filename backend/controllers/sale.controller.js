@@ -318,12 +318,12 @@ const cancelSale = async (req, res) => {
     await withTransaction(async (connection) => {
       // 1. Obtener la venta
       const [sale] = await connection.execute(
-        'SELECT * FROM sales WHERE id = ? AND status = "Completada" FOR UPDATE',
+        'SELECT * FROM sales WHERE id = ? AND status = "Activo" FOR UPDATE',
         [req.params.id]
       );
 
       if (sale.length === 0) {
-        throw new Error('Venta no encontrada o ya cancelada');
+        throw new Error('Venta no encontrada o ya Anulado');
       }
 
       // 2. Obtener detalles de la venta
@@ -372,13 +372,13 @@ const cancelSale = async (req, res) => {
         });
       }
 
-      // 4. Marcar venta como cancelada
+      // 4. Marcar venta como Anulado
       await connection.execute(
-        'UPDATE sales SET status = "Cancelada" WHERE id = ?',
+        'UPDATE sales SET status = "Anulado" WHERE id = ?',
         [req.params.id]
       );
 
-      res.json({ message: 'Venta cancelada exitosamente' });
+      res.json({ message: 'Venta Anulado exitosamente' });
     });
   } catch (error) {
     console.error('Error al cancelar venta:', error);

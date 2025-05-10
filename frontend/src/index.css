@@ -38,13 +38,13 @@
   font-weight: 500;
 }
 
-.status-badge.completada {
+.status-badge.activo {
   background-color: #f6ffed;
   border: 1px solid #b7eb8f;
   color: #52c41a;
 }
 
-.status-badge.cancelada {
+.status-badge.anulado {
   background-color: #fff2f0;
   border: 1px solid #ffccc7;
   color: #ff4d4f;

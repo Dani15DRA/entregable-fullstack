@@ -48,7 +48,7 @@ const SaleDetail = () => {
     setCancelling(true);
     try {
       await cancelSale(id);
-      message.success('Venta cancelada exitosamente');
+      message.success('Venta anulada exitosamente');
       fetchSale();
     } catch (error) {
       message.error(error.response?.data?.message || 'Error al cancelar la venta');
@@ -81,7 +81,7 @@ const SaleDetail = () => {
                     <Text strong>{formatDate(sale.sale_date, 'DD/MM/YYYY HH:mm')}</Text>
                   </Descriptions.Item>
                   <Descriptions.Item label="Estado">
-                    <Tag color={sale.status === 'Completada' ? 'green' : 'red'}>
+                    <Tag color={sale.status === 'Activo' ? 'green' : 'red'}>
                       {sale.status}
                     </Tag>
                   </Descriptions.Item>
@@ -169,7 +169,7 @@ const SaleDetail = () => {
               </Col>
             </Row>
 
-            {sale.status === 'Completada' && (
+            {sale.status === 'Activo' && (
               <Row justify="end" className="mt-4">
                 <Col>
                   <Button 
@@ -178,7 +178,7 @@ const SaleDetail = () => {
                     onClick={handleCancelSale}
                     loading={cancelling}
                   >
-                    Cancelar Venta
+                    Anular Venta
                   </Button>
                 </Col>
               </Row>

@@ -75,6 +75,7 @@ const Navbar = () => {
                           isActive('/ingredients') || 
                           isActive('/users') || 
                           isActive('/clients') || 
+                          isActive('/warehouse') || 
                           isActive('/suppliers')
                             ? 'border-indigo-500 text-gray-900'
                             : 'border-transparent text-gray-500 hover:border-gray-300 hover:text-gray-700'
@@ -148,6 +149,16 @@ const Navbar = () => {
                             }`}
                           >
                             Proveedores
+                          </Link>
+                          <Link
+                            to="/warehouse"
+                            className={`block px-4 py-2 text-sm ${
+                              isActive('/warehouse')
+                                ? 'bg-indigo-100 text-indigo-700'
+                                : 'text-gray-700 hover:bg-gray-100'
+                            }`}
+                          >
+                            Almacén
                           </Link>
                         </div>
                       )}

@@ -124,8 +124,8 @@ const SaleManagement = () => {
               <Col span={8}>
                 <Form.Item name="status" label="Estado">
                   <Select placeholder="Seleccione estado" allowClear>
-                    <Option value="Completada">Completada</Option>
-                    <Option value="Cancelada">Cancelada</Option>
+                    <Option value="Anulado">Anulado</Option>
+                    <Option value="Activo">Activo</Option>
                   </Select>
                 </Form.Item>
               </Col>

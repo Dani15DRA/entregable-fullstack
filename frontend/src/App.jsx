@@ -15,6 +15,7 @@ import SupplierManagement from './components/Suppliers/SupplierManagement';
 import SaleManagement from './components/Sales/SaleManagement';
 import SaleDetail from './components/Sales/SaleDetail';
 import SaleForm from './components/Sales/SaleForm';
+import WarehouseManagement from './components/Inventory/WarehouseManagement';
 
 function App() {
   const [auth, setAuth] = useState({
@@ -83,6 +84,15 @@ function App() {
           }
         />
 
+
+                <Route
+          path="/warehouse"
+          element={
+            <PrivateRoute>
+              {auth.role === 'admin' ? <WarehouseManagement /> : <Navigate to="/dashboard" />}
+            </PrivateRoute>
+          }
+        />
         <Route
           path="/clients"
           element={
