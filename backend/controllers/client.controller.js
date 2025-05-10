@@ -86,6 +86,19 @@ const deleteClient = async (req, res) => {
   const { id } = req.params;
   
   try {
+    // Primero verificamos si el cliente tiene ventas asociadas
+    const [sales] = await db.execute(
+      'SELECT COUNT(*) as salesCount FROM sales WHERE client_id = ?',
+      [id]
+    );
+
+    if (sales[0].salesCount > 0) {
+      return res.status(400).json({ 
+        message: 'No se puede eliminar el cliente porque tiene ventas asociadas' 
+      });
+    }
+
+    // Si no tiene ventas, procedemos con la eliminación
     const [result] = await db.execute(
       'DELETE FROM clients WHERE id = ?',
       [id]
@@ -97,7 +110,10 @@ const deleteClient = async (req, res) => {
     
     res.json({ message: 'Cliente eliminado exitosamente' });
   } catch (err) {
-    res.status(500).json({ message: 'Error al eliminar cliente' });
+    res.status(500).json({ 
+      message: 'Error al eliminar cliente',
+      error: err.message 
+    });
   }
 };
 

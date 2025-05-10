@@ -141,4 +141,34 @@ export const deleteSupplier = async (id) => {
   const response = await api.delete(`/suppliers/${id}`);
   return response.data;
 };
+
+//VENTAS
+
+export const createSale = async (saleData) => {
+  const response = await api.post('/sales', saleData);
+  return response.data;
+};
+
+export const getSales = async (filters = {}) => {
+  const params = new URLSearchParams(filters);
+  const response = await api.get(`/sales?${params.toString()}`);
+  return response.data;
+};
+
+export const getSaleById = async (id) => {
+  const response = await api.get(`/sales/${id}`);
+  return response.data;
+};
+
+export const cancelSale = async (id) => {
+  const response = await api.delete(`/sales/${id}`);
+  return response.data;
+};
+
+// Agrega esta función a tu archivo api.js
+export const getProductStock = async (productId) => {
+  const response = await api.get(`/inventory?product_id=${productId}`);
+  return response.data.length > 0 ? response.data[0] : { quantity: 0 };
+};
+
 export default api;

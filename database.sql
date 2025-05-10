@@ -69,6 +69,7 @@ CREATE TABLE sales (
   status ENUM('Pendiente', 'Completada', 'Cancelada') DEFAULT 'Completada',
   prescription_required BOOLEAN DEFAULT FALSE,
   prescription_details TEXT,
+  notes TEXT,
   FOREIGN KEY (client_id) REFERENCES clients(id) ON DELETE SET NULL,
   FOREIGN KEY (user_id) REFERENCES users(id)
 );

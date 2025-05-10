@@ -3,3 +3,49 @@
 @tailwind base;
 @tailwind components;
 @tailwind utilities;
+
+/* Agrega estos estilos a tu archivo CSS */
+.sale-form {
+  max-width: 1200px;
+  margin: 0 auto;
+}
+
+.sale-totals {
+  background: #f9f9f9;
+  padding: 16px;
+  border-radius: 4px;
+}
+
+.total-row {
+  display: flex;
+  justify-content: space-between;
+  margin-bottom: 8px;
+  font-size: 16px;
+}
+
+.grand-total {
+  font-weight: bold;
+  font-size: 18px;
+  margin-top: 12px;
+  padding-top: 12px;
+  border-top: 1px solid #e8e8e8;
+}
+
+.status-badge {
+  padding: 2px 8px;
+  border-radius: 4px;
+  font-size: 12px;
+  font-weight: 500;
+}
+
+.status-badge.completada {
+  background-color: #f6ffed;
+  border: 1px solid #b7eb8f;
+  color: #52c41a;
+}
+
+.status-badge.cancelada {
+  background-color: #fff2f0;
+  border: 1px solid #ffccc7;
+  color: #ff4d4f;
+}

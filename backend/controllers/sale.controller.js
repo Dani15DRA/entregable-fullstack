@@ -1,4 +1,3 @@
-// controllers/sale.controller.js
 const db = require('../config/db');
 
 // Función auxiliar para manejar transacciones
@@ -17,8 +16,20 @@ const withTransaction = async (callback) => {
   }
 };
 
-// Registrar movimiento de inventario
 const recordMovement = async (connection, data) => {
+  // Validar que todos los campos requeridos estén presentes
+  const requiredFields = [
+    'product_id', 'warehouse_id', 'movement_type', 'quantity',
+    'previous_quantity', 'new_quantity', 'reference_id',
+    'reference_type', 'reason', 'user_id'
+  ];
+  
+  for (const field of requiredFields) {
+    if (data[field] === undefined) {
+      throw new Error(`Campo requerido faltante en recordMovement: ${field}`);
+    }
+  }
+
   await connection.execute(
     `INSERT INTO inventory_movements 
      (product_id, warehouse_id, movement_type, quantity, previous_quantity, 
@@ -38,25 +49,41 @@ const recordMovement = async (connection, data) => {
     ]
   );
 };
-
-// Crear una nueva venta
 const createSale = async (req, res) => {
   try {
     const { client_id, items, payment_method, notes, warehouse_id = 1 } = req.body;
     const user_id = req.user.id;
 
+    // Validar que client_id no sea undefined (puede ser null para ventas sin cliente)
+    if (client_id === undefined) {
+      throw new Error('El campo client_id no puede ser undefined, usa null para ventas sin cliente');
+    }
+
+    // Validar que los items no estén vacíos
+    if (!items || items.length === 0) {
+      throw new Error('Debe incluir al menos un producto en la venta');
+    }
+
     await withTransaction(async (connection) => {
       // 1. Calcular totales
       let subtotal = 0;
+      const productIds = items.map(i => i.product_id);
+      const productPlaceholders = items.map(() => '?').join(',');
+      
       const [products] = await connection.execute(
-        'SELECT id, price, name FROM products WHERE id IN (?)',
-        [items.map(i => i.product_id)]
+        `SELECT id, price, name FROM products WHERE id IN (${productPlaceholders})`,
+        productIds
       );
+
+      if (products.length !== items.length) {
+        const missingIds = items.filter(item => 
+          !products.some(p => p.id === item.product_id)
+        ).map(item => item.product_id);
+        throw new Error(`Productos no encontrados: ${missingIds.join(', ')}`);
+      }
 
       const itemsWithPrices = items.map(item => {
         const product = products.find(p => p.id === item.product_id);
-        if (!product) throw new Error(`Producto ${item.product_id} no encontrado`);
-        
         const unit_price = product.price;
         const total_price = unit_price * item.quantity;
         subtotal += total_price;
@@ -71,27 +98,42 @@ const createSale = async (req, res) => {
       const tax = subtotal * 0.16; // IVA 16%
       const total = subtotal + tax;
 
-      // 2. Crear la venta
+      // 2. Crear la venta - Asegurar que todos los valores estén definidos
       const [saleResult] = await connection.execute(
         `INSERT INTO sales 
          (client_id, user_id, subtotal, tax, total, payment_method, notes)
          VALUES (?, ?, ?, ?, ?, ?, ?)`,
-        [client_id, user_id, subtotal, tax, total, payment_method, notes]
+        [
+          client_id || null, // Convertir undefined a null
+          user_id,
+          subtotal,
+          tax,
+          total,
+          payment_method,
+          notes || null // Convertir undefined a null
+        ]
       );
       const saleId = saleResult.insertId;
 
-      // 3. Crear detalles de venta
-      await connection.execute(
+      // 3. Crear detalles de venta - Validar cada campo
+      const saleDetailsValues = itemsWithPrices.map(item => [
+        saleId, 
+        item.product_id, 
+        item.quantity, 
+        item.unit_price, 
+        item.total_price
+      ]);
+
+      // Validar que no haya valores undefined en los detalles
+      if (saleDetailsValues.some(arr => arr.some(val => val === undefined))) {
+        throw new Error('Uno o más valores en los detalles de venta son undefined');
+      }
+
+      await connection.query(
         `INSERT INTO sale_details 
-         (sale_id, product_id, quantity, unit_price, total_price)
-         VALUES ?`,
-        [itemsWithPrices.map(item => [
-          saleId, 
-          item.product_id, 
-          item.quantity, 
-          item.unit_price, 
-          item.total_price
-        ])]
+        (sale_id, product_id, quantity, unit_price, total_price)
+        VALUES ?`,
+        [saleDetailsValues]
       );
 
       // 4. Actualizar inventario y registrar movimientos
@@ -109,16 +151,20 @@ const createSale = async (req, res) => {
         const previousQuantity = inventory[0].quantity;
         const newQuantity = previousQuantity - item.quantity;
 
+        if (newQuantity < 0) {
+          throw new Error(`Stock insuficiente para producto ${item.product_id}. Disponible: ${previousQuantity}, Solicitado: ${item.quantity}`);
+        }
+
         // Actualizar inventario
         await connection.execute(
           'UPDATE inventory SET quantity = ? WHERE product_id = ? AND warehouse_id = ?',
           [newQuantity, item.product_id, warehouse_id]
         );
 
-        // Registrar movimiento
+        // Registrar movimiento - Asegurar que todos los campos estén definidos
         await recordMovement(connection, {
           product_id: item.product_id,
-          warehouse_id,
+          warehouse_id: warehouse_id,
           movement_type: 'Salida',
           quantity: item.quantity,
           previous_quantity: previousQuantity,
@@ -126,7 +172,7 @@ const createSale = async (req, res) => {
           reference_id: saleId,
           reference_type: 'sale',
           reason: `Venta #${saleId}`,
-          user_id
+          user_id: user_id
         });
       }
 
@@ -158,7 +204,7 @@ const createSale = async (req, res) => {
     });
   } catch (error) {
     console.error('Error al crear venta:', error);
-    res.status(500).json({ 
+    res.status(400).json({ 
       error: 'Error al procesar la venta',
       message: error.message 
     });
@@ -202,7 +248,7 @@ const getSales = async (req, res) => {
 
     query += ' ORDER BY s.sale_date DESC';
 
-    const [sales] = await db.execute(query, params);
+     const [sales] = await db.execute(query, params);
 
     // Obtener detalles para cada venta
     const salesWithDetails = await Promise.all(

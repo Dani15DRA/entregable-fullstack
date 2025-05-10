@@ -12,6 +12,10 @@ import Users from './components/Users/User';
 import InventoryManagement from './components/Inventory/InventoryManagement';
 import ClientManagement from './components/Clients/ClientManagement';
 import SupplierManagement from './components/Suppliers/SupplierManagement';
+import SaleManagement from './components/Sales/SaleManagement';
+import SaleDetail from './components/Sales/SaleDetail';
+import SaleForm from './components/Sales/SaleForm';
+
 function App() {
   const [auth, setAuth] = useState({
     token: localStorage.getItem('token'),
@@ -97,6 +101,32 @@ function App() {
           }
         />
         
+        <Route
+  path="/sales"
+  element={
+    <PrivateRoute>
+      <SaleManagement />
+    </PrivateRoute>
+  }
+/>
+
+<Route
+  path="/sales/new"
+  element={
+    <PrivateRoute>
+      <SaleForm />
+    </PrivateRoute>
+  }
+/>
+
+<Route
+  path="/sales/:id"
+  element={
+    <PrivateRoute>
+      <SaleDetail />
+    </PrivateRoute>
+  }
+/>
         {/* Ruta por defecto */}
         <Route path="*" element={<Navigate to="/login" />} />
       </Routes>

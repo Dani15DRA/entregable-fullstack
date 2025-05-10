@@ -59,27 +59,32 @@ const ClientManagement = () => {
     }
   };
 
-  const handleDelete = async (id) => {
-    const result = await Swal.fire({
-      title: '¿Estás seguro?',
-      text: "No podrás revertir esta acción",
-      icon: 'warning',
-      showCancelButton: true,
-      confirmButtonColor: '#3085d6',
-      cancelButtonColor: '#d33',
-      confirmButtonText: 'Sí, eliminar'
-    });
+const handleDelete = async (id) => {
+  const result = await Swal.fire({
+    title: '¿Estás seguro?',
+    text: "No podrás revertir esta acción",
+    icon: 'warning',
+    showCancelButton: true,
+    confirmButtonColor: '#3085d6',
+    cancelButtonColor: '#d33',
+    confirmButtonText: 'Sí, eliminar'
+  });
 
-    if (result.isConfirmed) {
-      try {
-        await deleteClient(id);
-        Swal.fire('Eliminado', 'Cliente eliminado correctamente', 'success');
-        fetchClients();
-      } catch (error) {
+  if (result.isConfirmed) {
+    try {
+      await deleteClient(id);
+      Swal.fire('Eliminado', 'Cliente eliminado correctamente', 'success');
+      fetchClients();
+    } catch (error) {
+      // Mensaje específico para clientes con ventas asociadas
+      if (error.response?.data?.message?.includes('ventas asociadas')) {
+        Swal.fire('Error', error.response.data.message, 'error');
+      } else {
         Swal.fire('Error', 'No se pudo eliminar el cliente', 'error');
       }
     }
-  };
+  }
+};
 
   if (loading) return <div className="text-center py-8">Cargando clientes...</div>;
 

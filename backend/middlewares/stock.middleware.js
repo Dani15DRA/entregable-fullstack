@@ -1,4 +1,3 @@
-// middlewares/stock.middleware.js
 const db = require('../config/db');
 
 const checkStock = async (req, res, next) => {
@@ -23,7 +22,10 @@ const checkStock = async (req, res, next) => {
       
       if (inventory[0].quantity < item.quantity) {
         return res.status(400).json({ 
-          error: `Stock insuficiente para ${inventory[0].name}. Disponible: ${inventory[0].quantity}, Solicitado: ${item.quantity}` 
+          error: `Stock insuficiente para ${inventory[0].name}. Disponible: ${inventory[0].quantity}, Solicitado: ${item.quantity}`,
+          productId: item.product_id,
+          available: inventory[0].quantity,
+          requested: item.quantity
         });
       }
     }
