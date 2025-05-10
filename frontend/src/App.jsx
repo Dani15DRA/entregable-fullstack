@@ -9,7 +9,9 @@ import ProductManagement from './components/Products/ProductManagement';
 import IngredientManagement from './components/Ingredients/IngredientManagement';
 import ProductDetail from './components/Products/ProductDetail';
 import Users from './components/Users/User';
-
+import InventoryManagement from './components/Inventory/InventoryManagement';
+import ClientManagement from './components/Clients/ClientManagement';
+import SupplierManagement from './components/Suppliers/SupplierManagement';
 function App() {
   const [auth, setAuth] = useState({
     token: localStorage.getItem('token'),
@@ -67,6 +69,34 @@ function App() {
             </PrivateRoute>
           }
         />
+
+                <Route
+          path="/inventory"
+          element={
+            <PrivateRoute>
+              {auth.role === 'admin' ? <InventoryManagement /> : <Navigate to="/dashboard" />}
+            </PrivateRoute>
+          }
+        />
+
+        <Route
+          path="/clients"
+          element={
+            <PrivateRoute>
+              <ClientManagement />
+            </PrivateRoute>
+          }
+        />
+
+        <Route
+          path="/suppliers"
+          element={
+            <PrivateRoute>
+              {auth.role === 'admin' ? <SupplierManagement /> : <Navigate to="/dashboard" />}
+            </PrivateRoute>
+          }
+        />
+        
         {/* Ruta por defecto */}
         <Route path="*" element={<Navigate to="/login" />} />
       </Routes>

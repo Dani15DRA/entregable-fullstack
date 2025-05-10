@@ -16,6 +16,15 @@ export const getProducts = async (filters = {}) => {
   }
 };
 
+export const getActiveProductsForSelect = async () => {
+  try {
+    const response = await api.get('/products/active-select');
+    return response.data || [];
+  } catch (error) {
+    console.error('Error fetching products for select:', error);
+    return [];
+  }
+};
 export const getProductById = async (id) => {
   const response = await api.get(`/products/${id}`);
   return response.data;

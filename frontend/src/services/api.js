@@ -90,4 +90,55 @@ export const removeIngredientFromProduct = async (productId, ingredientId) => {
   return response.data;
 };
 
+// Clientes
+export const getClients = async (search = '') => {
+  const response = await api.get('/clients', { params: { search } });
+  return response.data;
+};
+
+export const getClientById = async (id) => {
+  const response = await api.get(`/clients/${id}`);
+  return response.data;
+};
+
+export const createClient = async (clientData) => {
+  const response = await api.post('/clients', clientData);
+  return response.data;
+};
+
+export const updateClient = async (id, clientData) => {
+  const response = await api.put(`/clients/${id}`, clientData);
+  return response.data;
+};
+
+export const deleteClient = async (id) => {
+  const response = await api.delete(`/clients/${id}`);
+  return response.data;
+};
+
+// Proveedores
+export const getSuppliers = async (search = '') => {
+  const response = await api.get('/suppliers', { params: { search } });
+  return response.data;
+};
+
+export const getSupplierById = async (id) => {
+  const response = await api.get(`/suppliers/${id}`);
+  return response.data;
+};
+
+export const createSupplier = async (supplierData) => {
+  const response = await api.post('/suppliers', supplierData);
+  return response.data;
+};
+
+export const updateSupplier = async (id, supplierData) => {
+  const response = await api.put(`/suppliers/${id}`, supplierData);
+  return response.data;
+};
+
+export const deleteSupplier = async (id) => {
+  const response = await api.delete(`/suppliers/${id}`);
+  return response.data;
+};
 export default api;

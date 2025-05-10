@@ -221,7 +221,7 @@ const Users = () => {
 
         {/* User Modal */}
         {showModal && (
-          <div className="fixed inset-0 z-50 flex items-center justify-center p-4  bg-opacity-50">
+    <div className="fixed inset-0 bg-transparent bg-opacity-20 flex items-center justify-center z-50 backdrop-blur-[1px]">
             <div className="relative bg-white rounded-xl shadow-2xl w-full max-w-md border border-gray-200">
               <div className="px-6 py-4 border-b border-gray-200 bg-gray-50 rounded-t-xl flex justify-between items-center">
                 <h3 className="text-xl font-semibold text-gray-800">

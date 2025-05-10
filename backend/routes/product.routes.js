@@ -5,6 +5,7 @@ const productController = require('../controllers/product.controller');
 
 // Rutas públicas
 router.get('/', productController.getProducts);
+router.get('/active-select', productController.getActiveProductsForSelect); // Nueva ruta
 router.get('/:id', productController.getProductById);
 
 // Rutas protegidas (requieren autenticación y ser admin)

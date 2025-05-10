@@ -1,5 +1,5 @@
 // Navbar.jsx
-import React from 'react';
+import React, { useState } from 'react';
 import { Link, useNavigate, useLocation } from 'react-router-dom';
 
 const Navbar = () => {
@@ -7,6 +7,7 @@ const Navbar = () => {
   const location = useLocation();
   const role = localStorage.getItem('role');
   const email = localStorage.getItem('email');
+  const [isMaintenanceOpen, setIsMaintenanceOpen] = useState(false);
 
   const handleLogout = () => {
     localStorage.removeItem('token');
@@ -15,7 +16,6 @@ const Navbar = () => {
     navigate('/login');
   };
 
-  // Función para determinar si un enlace está activo
   const isActive = (path) => {
     return location.pathname === path;
   };
@@ -41,39 +41,108 @@ const Navbar = () => {
               >
                 Inicio
               </Link>
+              
               {role === 'admin' && (
                 <>
+                  <Link
+                    to="/products"
+                    className={`inline-flex items-center px-1 pt-1 border-b-2 text-sm font-medium ${
+                      isActive('/products')
+                        ? 'border-indigo-500 text-gray-900'
+                        : 'border-transparent text-gray-500 hover:border-gray-300 hover:text-gray-700'
+                    }`}
+                  >
+                    Productos
+                  </Link>
                   
-                    <Link
-    to="/products"
-    className={`inline-flex items-center px-1 pt-1 border-b-2 text-sm font-medium ${
-      isActive('/products')
-        ? 'border-indigo-500 text-gray-900'
-        : 'border-transparent text-gray-500 hover:border-gray-300 hover:text-gray-700'
-    }`}
-  >
-    Productos
-  </Link>
-  <Link
-    to="/ingredients"
-    className={`inline-flex items-center px-1 pt-1 border-b-2 text-sm font-medium ${
-      isActive('/ingredients')
-        ? 'border-indigo-500 text-gray-900'
-        : 'border-transparent text-gray-500 hover:border-gray-300 hover:text-gray-700'
-    }`}
-  >
-    Ingredientes
-  </Link>
-  <Link
-    to="/users"
-    className={`inline-flex items-center px-1 pt-1 border-b-2 text-sm font-medium ${
-      isActive('/users')
-        ? 'border-indigo-500 text-gray-900'
-        : 'border-transparent text-gray-500 hover:border-gray-300 hover:text-gray-700'
-    }`}
-  >
-    Usuarios
-  </Link>
+                  <Link
+                    to="/inventory"
+                    className={`inline-flex items-center px-1 pt-1 border-b-2 text-sm font-medium ${
+                      isActive('/inventory')
+                        ? 'border-indigo-500 text-gray-900'
+                        : 'border-transparent text-gray-500 hover:border-gray-300 hover:text-gray-700'
+                    }`}
+                  >
+                    Inventario
+                  </Link>
+
+                  {/* Menú de Mantenimiento - Versión corregida */}
+                  <div className="relative h-full flex items-center">
+                    <div>
+                      <button
+                        onClick={() => setIsMaintenanceOpen(!isMaintenanceOpen)}
+                        className={`inline-flex items-center px-1 pt-1 border-b-2 text-sm font-medium ${
+                          isActive('/ingredients') || 
+                          isActive('/users') || 
+                          isActive('/clients') || 
+                          isActive('/suppliers')
+                            ? 'border-indigo-500 text-gray-900'
+                            : 'border-transparent text-gray-500 hover:border-gray-300 hover:text-gray-700'
+                        }`}
+                      >
+                        Mantenimiento
+                        <svg
+                          className={`ml-1 h-5 w-5 transform transition-transform ${
+                            isMaintenanceOpen ? 'rotate-180' : ''
+                          }`}
+                          xmlns="http://www.w3.org/2000/svg"
+                          viewBox="0 0 20 20"
+                          fill="currentColor"
+                        >
+                          <path
+                            fillRule="evenodd"
+                            d="M5.293 7.293a1 1 0 011.414 0L10 10.586l3.293-3.293a1 1 0 111.414 1.414l-4 4a1 1 0 01-1.414 0l-4-4a1 1 0 010-1.414z"
+                            clipRule="evenodd"
+                          />
+                        </svg>
+                      </button>
+
+                      {isMaintenanceOpen && (
+                        <div className="absolute left-0 mt-0 w-48 bg-white rounded-md shadow-lg py-1 border border-gray-200 z-10">
+                          <Link
+                            to="/ingredients"
+                            className={`block px-4 py-2 text-sm ${
+                              isActive('/ingredients')
+                                ? 'bg-indigo-100 text-indigo-700'
+                                : 'text-gray-700 hover:bg-gray-100'
+                            }`}
+                          >
+                            Ingredientes
+                          </Link>
+                          <Link
+                            to="/users"
+                            className={`block px-4 py-2 text-sm ${
+                              isActive('/users')
+                                ? 'bg-indigo-100 text-indigo-700'
+                                : 'text-gray-700 hover:bg-gray-100'
+                            }`}
+                          >
+                            Usuarios
+                          </Link>
+                          <Link
+                            to="/clients"
+                            className={`block px-4 py-2 text-sm ${
+                              isActive('/clients')
+                                ? 'bg-indigo-100 text-indigo-700'
+                                : 'text-gray-700 hover:bg-gray-100'
+                            }`}
+                          >
+                            Clientes
+                          </Link>
+                          <Link
+                            to="/suppliers"
+                            className={`block px-4 py-2 text-sm ${
+                              isActive('/suppliers')
+                                ? 'bg-indigo-100 text-indigo-700'
+                                : 'text-gray-700 hover:bg-gray-100'
+                            }`}
+                          >
+                            Proveedores
+                          </Link>
+                        </div>
+                      )}
+                    </div>
+                  </div>
                 </>
               )}
             </div>

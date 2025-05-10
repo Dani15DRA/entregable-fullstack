@@ -147,10 +147,36 @@ const deleteProduct = async (req, res) => {
   }
 };
 
+// Obtener productos activos simplificados (para selects)
+const getActiveProductsForSelect = async (req, res) => {
+  try {
+    // Consulta optimizada para selects, solo campos necesarios
+    const [products] = await db.execute(`
+      SELECT 
+        id, 
+        name, 
+        barcode,
+        category
+      FROM products 
+      WHERE is_active = TRUE
+      ORDER BY name ASC
+    `);
+    
+    res.json(products);
+  } catch (err) {
+    console.error('Error al obtener productos para select:', err);
+    res.status(500).json({ 
+      message: 'Error al obtener productos',
+      error: err.message 
+    });
+  }
+};
+
 module.exports = {
   getProducts,
   getProductById,
   createProduct,
   updateProduct,
-  deleteProduct
+  deleteProduct,
+  getActiveProductsForSelect 
 };
