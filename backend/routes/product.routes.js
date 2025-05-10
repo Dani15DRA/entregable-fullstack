@@ -5,9 +5,9 @@ const productController = require('../controllers/product.controller');
 
 // Rutas públicas
 router.get('/', productController.getProducts);
-router.get('/:id', productController.getProduct);
+router.get('/:id', productController.getProductById);
 
-// Rutas protegidas (solo admin)
+// Rutas protegidas (requieren autenticación y ser admin)
 router.post('/', authenticateJWT, isAdmin, productController.createProduct);
 router.put('/:id', authenticateJWT, isAdmin, productController.updateProduct);
 router.delete('/:id', authenticateJWT, isAdmin, productController.deleteProduct);

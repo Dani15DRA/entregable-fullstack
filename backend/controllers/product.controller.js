@@ -1,240 +1,156 @@
-const db = require('../config/db'); // Asegúrate de tener tu conexión MySQL configurada
+const db = require('../config/db');
 
-// Helper para manejar errores de la base de datos
-const handleDbError = (res, err) => {
-  console.error('Database error:', err);
-  res.status(500).json({ error: 'Error en la base de datos' });
-};
-
-// Crear producto (solo admin)
-exports.createProduct = async (req, res) => {
-  const {
-    name,
-    description,
-    price,
-    stock,
-    category,
-    requiresPrescription,
-    laboratory,
-    barcode,
-    expiryDate,
-    imageUrl,
-    activeIngredients
-  } = req.body;
-
+// Listar productos con filtros
+const getProducts = async (req, res) => {
   try {
-    // Iniciar transacción
-    await db.beginTransaction();
-
-    // 1. Insertar producto principal
-    const [productResult] = await db.execute(
-      `INSERT INTO products (
-        name, description, price, stock, category, 
-        requires_prescription, laboratory, barcode, expiry_date, image_url
-      ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`,
-      [
-        name, description, price, stock, category,
-        requiresPrescription, laboratory, barcode, expiryDate, imageUrl
-      ]
-    );
-
-    const productId = productResult.insertId;
-
-    // 2. Insertar ingredientes activos si existen
-    if (activeIngredients && activeIngredients.length > 0) {
-      for (const ingredient of activeIngredients) {
-        // Insertar o obtener ID del ingrediente
-        const [ingredientResult] = await db.execute(
-          `INSERT INTO active_ingredients (name, concentration) 
-           VALUES (?, ?) ON DUPLICATE KEY UPDATE id=LAST_INSERT_ID(id)`,
-          [ingredient.name, ingredient.concentration]
-        );
-
-        const ingredientId = ingredientResult.insertId;
-
-        // Relacionar producto con ingrediente
-        await db.execute(
-          `INSERT INTO product_ingredients (product_id, ingredient_id)
-           VALUES (?, ?)`,
-          [productId, ingredientId]
-        );
-      }
-    }
-
-    // Commit de la transacción
-    await db.commit();
-
-    // Obtener el producto recién creado con sus ingredientes
-    const [newProduct] = await db.execute(
-      `SELECT p.*, 
-       GROUP_CONCAT(CONCAT(ai.name, ' (', ai.concentration, ')') AS ingredients
-       FROM products p
-       LEFT JOIN product_ingredients pi ON p.id = pi.product_id
-       LEFT JOIN active_ingredients ai ON pi.ingredient_id = ai.id
-       WHERE p.id = ?
-       GROUP BY p.id`,
-      [productId]
-    );
-
-    res.status(201).json(newProduct[0]);
-  } catch (err) {
-    await db.rollback();
-    handleDbError(res, err);
-  }
-};
-
-// Obtener todos los productos (público)
-exports.getProducts = async (req, res) => {
-  try {
-    const [products] = await db.execute(
-      `SELECT p.*, 
-       GROUP_CONCAT(CONCAT(ai.name, ' (', ai.concentration, ')')) AS ingredients
-FROM products p
-LEFT JOIN product_ingredients pi ON p.id = pi.product_id
-LEFT JOIN active_ingredients ai ON pi.ingredient_id = ai.id
-GROUP BY p.id;
-`
-    );
+    let query = 'SELECT * FROM products WHERE is_active = TRUE';
+    const params = [];
     
-    // Convertir el string de ingredientes a array
-    const formattedProducts = products.map(product => ({
-      ...product,
-      ingredients: product.ingredients ? product.ingredients.split(',') : []
-    }));
-
-    res.json(formattedProducts);
+    // Filtros
+    if (req.query.category) {
+      query += ' AND category = ?';
+      params.push(req.query.category);
+    }
+    
+    if (req.query.search) {
+      query += ' AND (name LIKE ? OR description LIKE ?)';
+      params.push(`%${req.query.search}%`, `%${req.query.search}%`);
+    }
+    
+    const [products] = await db.execute(query, params);
+    res.json(products);
   } catch (err) {
-    handleDbError(res, err);
+    res.status(500).json({ message: 'Error al obtener productos' });
   }
 };
 
-// Obtener producto por ID (público)
-exports.getProduct = async (req, res) => {
+// Obtener detalles de un producto
+const getProductById = async (req, res) => {
   try {
     const [product] = await db.execute(
-      `SELECT p.*, 
-       GROUP_CONCAT(CONCAT(ai.name, ' (', ai.concentration, ')')) AS ingredients
-    FROM products p
-    LEFT JOIN product_ingredients pi ON p.id = pi.product_id
-    LEFT JOIN active_ingredients ai ON pi.ingredient_id = ai.id
-       WHERE p.id = ?
-       GROUP BY p.id`,
+      'SELECT * FROM products WHERE id = ? AND is_active = TRUE', 
       [req.params.id]
     );
-
+    
     if (product.length === 0) {
-      return res.status(404).json({ error: 'Producto no encontrado' });
+      return res.status(404).json({ message: 'Producto no encontrado' });
     }
+    
 
-    // Formatear ingredientes
-    const formattedProduct = {
-      ...product[0],
-      ingredients: product[0].ingredients ? product[0].ingredients.split(',') : []
-    };
-
-    res.json(formattedProduct);
+    // Obtener ingredientes del producto
+    const [ingredients] = await db.execute(
+      `SELECT ai.id, ai.name, ai.concentration 
+       FROM active_ingredients ai
+       JOIN product_ingredients pi ON ai.id = pi.ingredient_id
+       WHERE pi.product_id = ?`,
+      [req.params.id]
+    );
+    
+    res.json({ ...product[0], ingredients });
   } catch (err) {
-    handleDbError(res, err);
+    res.status(500).json({ message: 'Error al obtener el producto' });
   }
 };
 
-// Actualizar producto (solo admin)
-exports.updateProduct = async (req, res) => {
-  const productId = req.params.id;
-  const {
-    name,
-    description,
-    price,
-    stock,
-    category,
-    requiresPrescription,
-    laboratory,
-    barcode,
-    expiryDate,
-    imageUrl,
-    activeIngredients
-  } = req.body;
-
+// Crear nuevo producto
+const createProduct = async (req, res) => {
+  const { name, description, price, category, requires_prescription, laboratory, barcode, expiry_date, image_url } = req.body;
+  
   try {
-    await db.beginTransaction();
-
-    // 1. Actualizar producto principal
-    await db.execute(
-      `UPDATE products SET
-        name = ?, description = ?, price = ?, stock = ?, category = ?,
-        requires_prescription = ?, laboratory = ?, barcode = ?, expiry_date = ?, image_url = ?
-       WHERE id = ?`,
-      [
-        name, description, price, stock, category,
-        requiresPrescription, laboratory, barcode, expiryDate, imageUrl,
-        productId
-      ]
+    const [result] = await db.execute(
+      `INSERT INTO products 
+       (name, description, price, category, requires_prescription, laboratory, barcode, expiry_date, image_url)
+       VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)`,
+      [name, description, price, category, requires_prescription || false, laboratory, barcode, expiry_date, image_url]
     );
-
-    // 2. Eliminar relaciones de ingredientes existentes
-    await db.execute(
-      `DELETE FROM product_ingredients WHERE product_id = ?`,
-      [productId]
-    );
-
-    // 3. Insertar nuevos ingredientes si existen
-    if (activeIngredients && activeIngredients.length > 0) {
-      for (const ingredient of activeIngredients) {
-        const [ingredientResult] = await db.execute(
-          `INSERT INTO active_ingredients (name, concentration) 
-           VALUES (?, ?) ON DUPLICATE KEY UPDATE id=LAST_INSERT_ID(id)`,
-          [ingredient.name, ingredient.concentration]
-        );
-
-        const ingredientId = ingredientResult.insertId;
-
-        await db.execute(
-          `INSERT INTO product_ingredients (product_id, ingredient_id)
-           VALUES (?, ?)`,
-          [productId, ingredientId]
-        );
-      }
-    }
-
-    await db.commit();
-
-    // Obtener el producto actualizado
-    const [updatedProduct] = await db.execute(
-      `SELECT p.*, 
-       GROUP_CONCAT(CONCAT(ai.name, ' (', ai.concentration, ')')) AS ingredients
-       FROM products p
-       LEFT JOIN product_ingredients pi ON p.id = pi.product_id
-       LEFT JOIN active_ingredients ai ON pi.ingredient_id = ai.id
-       WHERE p.id = ?
-       GROUP BY p.id`,
-      [productId]
-    );
-
-    res.json({
-      ...updatedProduct[0],
-      ingredients: updatedProduct[0].ingredients ? updatedProduct[0].ingredients.split(',') : []
+    
+    res.status(201).json({ 
+      message: 'Producto creado exitosamente',
+      productId: result.insertId 
     });
   } catch (err) {
-    await db.rollback();
-    handleDbError(res, err);
+    if (err.code === 'ER_DUP_ENTRY') {
+      return res.status(400).json({ message: 'El código de barras ya existe' });
+    }
+    res.status(500).json({ message: 'Error al crear producto' });
   }
 };
 
-// Eliminar producto (solo admin)
-exports.deleteProduct = async (req, res) => {
+// Actualizar producto
+const updateProduct = async (req, res) => {
+  const { id } = req.params;
+  const { name, description, price, category, requires_prescription, laboratory, barcode, expiry_date, image_url } = req.body;
+  
   try {
-    // No necesitamos eliminar manualmente las relaciones por ON DELETE CASCADE
+    // Convertir la fecha si viene en formato ISO (puede ser necesario)
+    const formattedExpiryDate = expiry_date ? new Date(expiry_date).toISOString().split('T')[0] : null;
+
     const [result] = await db.execute(
-      `DELETE FROM products WHERE id = ?`,
-      [req.params.id]
+      `UPDATE products SET 
+       name = ?, description = ?, price = ?, category = ?, 
+       requires_prescription = ?, laboratory = ?, barcode = ?, 
+       expiry_date = ?, image_url = ?, updated_at = CURRENT_TIMESTAMP
+       WHERE id = ?`,
+      [
+        name, 
+        description, 
+        price, 
+        category, 
+        requires_prescription || false, 
+        laboratory, 
+        barcode, 
+        formattedExpiryDate, // Usamos la fecha formateada
+        image_url, 
+        id
+      ]
     );
-
+    
     if (result.affectedRows === 0) {
-      return res.status(404).json({ error: 'Producto no encontrado' });
+      return res.status(404).json({ message: 'Producto no encontrado' });
     }
-
-    res.status(204).send();
+    
+    // Devolver el producto actualizado
+    const [updatedProduct] = await db.execute(
+      'SELECT * FROM products WHERE id = ?', 
+      [id]
+    );
+    
+    res.json({ 
+      message: 'Producto actualizado exitosamente',
+      product: updatedProduct[0] 
+    });
   } catch (err) {
-    handleDbError(res, err);
+    if (err.code === 'ER_DUP_ENTRY') {
+      return res.status(400).json({ message: 'El código de barras ya existe' });
+    }
+    res.status(500).json({ message: 'Error al actualizar producto', error: err.message });
   }
+};
+
+// Desactivar producto (borrado lógico)
+const deleteProduct = async (req, res) => {
+  const { id } = req.params;
+  
+  try {
+    const [result] = await db.execute(
+      'UPDATE products SET is_active = FALSE WHERE id = ?',
+      [id]
+    );
+    
+    if (result.affectedRows === 0) {
+      return res.status(404).json({ message: 'Producto no encontrado' });
+    }
+    
+    res.json({ message: 'Producto desactivado exitosamente' });
+  } catch (err) {
+    res.status(500).json({ message: 'Error al desactivar producto' });
+  }
+};
+
+module.exports = {
+  getProducts,
+  getProductById,
+  createProduct,
+  updateProduct,
+  deleteProduct
 };
