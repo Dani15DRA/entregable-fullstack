@@ -43,6 +43,24 @@ export const deleteInventoryItem = async (id) => {
   return response.data;
 };
 
+export const createBulkInventory = async (warehouseId, items) => {
+  try {
+    const response = await api.post('/inventory/bulk', { 
+      warehouse_id: warehouseId,
+      items 
+    });
+    
+    if (!response.data.success) {
+      throw new Error(response.data.message || 'Error en la respuesta del servidor');
+    }
+    
+    return response.data;
+  } catch (error) {
+    console.error('Error en createBulkInventory:', error);
+    throw new Error(error.response?.data?.message || 'Error al guardar el inventario');
+  }
+};
+
 // Movimientos
 export const getMovements = async (filters = {}) => {
   const params = new URLSearchParams(filters);

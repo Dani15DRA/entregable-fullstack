@@ -12,6 +12,7 @@ import {
 } from '../../services/inventoryService';
 import InventoryModal from './InventoryModal';
 import MovementsModal from './MovementsModal';
+import BulkInventoryModal from './BulkInventoryModal';
 
 const InventoryManagement = () => {
   const [inventory, setInventory] = useState([]);
@@ -26,6 +27,7 @@ const InventoryManagement = () => {
   const [showMovementsModal, setShowMovementsModal] = useState(false);
   const [movements, setMovements] = useState([]);
   const navigate = useNavigate();
+  const [showBulkModal, setShowBulkModal] = useState(false);
 
   useEffect(() => {
     fetchData();
@@ -46,7 +48,16 @@ const InventoryManagement = () => {
       setLoading(false);
     }
   };
-
+const handleBulkSubmit = async (warehouseId, items) => {
+    try {
+      await createBulkInventory(warehouseId, items);
+      Swal.fire('Éxito', 'Inventario actualizado correctamente', 'success');
+      fetchData();
+      setShowBulkModal(false);
+    } catch (error) {
+      Swal.fire('Error', error.response?.data?.message || 'Error al guardar', 'error');
+    }
+  };
   const handleFilterChange = (e) => {
     const { name, value, type, checked } = e.target;
     setFilters(prev => ({
@@ -119,12 +130,19 @@ const InventoryManagement = () => {
       <div className="container mx-auto px-4 py-8">
         <div className="flex justify-between items-center mb-6">
           <h1 className="text-2xl font-bold text-gray-800">Gestión de Inventario</h1>
+                    <button
+            onClick={() => setShowBulkModal(true)}
+            className="bg-green-600 hover:bg-green-700 text-white px-4 py-2 rounded-md"
+          >
+            Entrada Múltiple
+          </button>
           <button
             onClick={() => handleOpenInventoryModal()}
             className="bg-indigo-600 hover:bg-indigo-700 text-white px-4 py-2 rounded-md"
           >
             Nuevo Ítem
           </button>
+          
         </div>
 
         {/* Filtros */}
@@ -223,7 +241,12 @@ const InventoryManagement = () => {
           item={selectedItem}
           warehouses={warehouses}
         />
-
+      <BulkInventoryModal
+        isOpen={showBulkModal}
+        onClose={() => setShowBulkModal(false)}
+        onSubmit={handleBulkSubmit}
+        warehouses={warehouses}
+      />
         <MovementsModal
           isOpen={showMovementsModal}
           onClose={() => setShowMovementsModal(false)}

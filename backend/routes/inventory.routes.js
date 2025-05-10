@@ -9,5 +9,6 @@ router.get('/:id', authenticateJWT, inventoryController.getInventoryItem);
 router.post('/', authenticateJWT, inventoryController.createOrUpdateInventory);
 router.put('/:id', authenticateJWT, inventoryController.updateInventory);
 router.delete('/:id', authenticateJWT, inventoryController.deleteInventory);
-
+// inventory.routes.js
+router.post('/bulk', authenticateJWT, inventoryController.createBulkInventory);
 module.exports = router;

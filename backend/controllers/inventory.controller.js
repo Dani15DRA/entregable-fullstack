@@ -240,11 +240,102 @@ const deleteInventory = async (req, res) => {
     res.status(500).json({ message: 'Error al eliminar ítem' });
   }
 };
+const createBulkInventory = async (req, res) => {
+  const { items, warehouse_id } = req.body;
+  
+  try {
+    await withTransaction(async (connection) => {
+      for (const item of items) {
+        // Validación de cada item
+        if (!item.product_id || item.quantity === undefined) {
+          throw new Error('Datos de producto incompletos');
+        }
 
+        // Verificar si ya existe
+        const [existing] = await connection.execute(
+          'SELECT id, quantity FROM inventory WHERE product_id = ? AND warehouse_id = ?',
+          [item.product_id, warehouse_id]
+        );
+        
+        if (existing.length > 0) {
+          // Actualizar existente
+          await connection.execute(
+            `UPDATE inventory SET 
+             quantity = quantity + ?, 
+             min_stock = COALESCE(?, min_stock),
+             max_stock = COALESCE(?, max_stock),
+             location_in_warehouse = COALESCE(?, location_in_warehouse)
+             WHERE id = ?`,
+            [
+              item.quantity || 0,
+              item.min_stock,
+              item.max_stock,
+              item.location_in_warehouse,
+              existing[0].id
+            ]
+          );
+          
+          // Registrar movimiento
+          await recordMovement(connection, {
+            product_id: item.product_id,
+            warehouse_id,
+            movement_type: 'Entrada',
+            quantity: item.quantity,
+            previous_quantity: existing[0].quantity,
+            new_quantity: existing[0].quantity + item.quantity,
+            user_id: req.user?.id || null,
+            reason: item.reason || 'Entrada múltiple de inventario'
+          });
+        } else {
+          // Crear nuevo
+          await connection.execute(
+            `INSERT INTO inventory 
+             (product_id, warehouse_id, quantity, min_stock, max_stock, location_in_warehouse)
+             VALUES (?, ?, ?, ?, ?, ?)`,
+            [
+              item.product_id,
+              warehouse_id,
+              item.quantity || 0,
+              item.min_stock || 0,
+              item.max_stock || null,
+              item.location_in_warehouse || null
+            ]
+          );
+          
+          // Registrar movimiento
+          await recordMovement(connection, {
+            product_id: item.product_id,
+            warehouse_id,
+            movement_type: 'Entrada',
+            quantity: item.quantity,
+            previous_quantity: 0,
+            new_quantity: item.quantity,
+            user_id: req.user?.id || null,
+            reason: item.reason || 'Creación múltiple de inventario'
+          });
+        }
+      }
+    });
+    
+    res.status(201).json({ 
+      success: true,
+      message: 'Inventario actualizado exitosamente' 
+    });
+  } catch (err) {
+    console.error('Error en createBulkInventory:', err);
+    res.status(500).json({ 
+      success: false,
+      message: 'Error al actualizar inventario', 
+      error: err.message,
+      stack: process.env.NODE_ENV === 'development' ? err.stack : undefined
+    });
+  }
+};
 module.exports = {
   getInventory,
   getInventoryItem,
   createOrUpdateInventory,
   updateInventory,
-  deleteInventory
+  deleteInventory,
+  createBulkInventory
 };
