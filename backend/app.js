@@ -12,6 +12,7 @@ const movementRoutes = require('./routes/movement.routes');
 const clientRoutes = require('./routes/client.routes'); 
 const supplierRoutes = require('./routes/supplier.routes');
 const saleRoutes = require('./routes/sale.routes');
+const dashboardRoutes = require('./routes/dashboard.routes');
 
 const app = express();
 
@@ -28,4 +29,5 @@ app.use('/movements', movementRoutes);
 app.use('/clients', clientRoutes); 
 app.use('/suppliers', supplierRoutes);
 app.use('/sales', saleRoutes); 
+app.use('/dashboard', dashboardRoutes); 
 module.exports = app;

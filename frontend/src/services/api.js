@@ -171,4 +171,21 @@ export const getProductStock = async (productId) => {
   return response.data.length > 0 ? response.data[0] : { quantity: 0 };
 };
 
+
+// Dashboard Statistics
+export const getDashboardStats = async () => {
+  const response = await api.get('/dashboard/stats');
+  return response.data;
+};
+
+export const getSalesChartData = async (params = {}) => {
+  const response = await api.get('/dashboard/sales-chart', { params });
+  return response.data;
+};
+
+export const getTopProducts = async (params = {}) => {
+  const response = await api.get('/dashboard/top-products', { params });
+  return response.data;
+};
+
 export default api;

@@ -71,10 +71,15 @@ const getSalesChartData = async (req, res) => {
 };
 
 // Productos más vendidos
+// Productos más vendidos
 const getTopProducts = async (req, res) => {
   try {
     const { limit = 5, days } = req.query;
     
+    // Convertir parámetros a números para asegurar el tipo correcto
+    const daysParam = days ? parseInt(days) : null;
+    const limitParam = parseInt(limit);
+
     let query = `
       SELECT 
         p.id,
@@ -89,9 +94,9 @@ const getTopProducts = async (req, res) => {
     
     const params = [];
     
-    if (days) {
+    if (daysParam) {
       query += ' WHERE s.sale_date >= DATE_SUB(CURRENT_DATE(), INTERVAL ? DAY)';
-      params.push(days);
+      params.push(daysParam.toString()); // Asegurar que es string para el parámetro
     }
     
     query += `
@@ -99,13 +104,16 @@ const getTopProducts = async (req, res) => {
       ORDER BY total_quantity DESC
       LIMIT ?
     `;
-    params.push(parseInt(limit));
+    params.push(limitParam.toString()); // Asegurar que es string para el parámetro
     
     const [topProducts] = await db.execute(query, params);
     res.json(topProducts);
   } catch (err) {
     console.error('Error al obtener productos más vendidos:', err);
-    res.status(500).json({ message: 'Error al obtener productos más vendidos' });
+    res.status(500).json({ 
+      message: 'Error al obtener productos más vendidos',
+      error: err.message 
+    });
   }
 };
 
